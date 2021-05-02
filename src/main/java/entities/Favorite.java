@@ -15,16 +15,17 @@ import lombok.Getter;
 public class Favorite {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	private Long favorite_id;
+	@Column(name="favoriteId")
+	private Long id;
 	@Column(length=255)
-	private String user_id;
+	private String userId;
 	
 	@ManyToOne
 	@JoinColumn(name="charger_id")
 	private Charger charger;
 	
 	public Favorite() {}
-	public Favorite(String user_id) {
-		this.user_id=user_id;
+	public Favorite(String userId) {
+		this.userId=userId;
 		}
 }

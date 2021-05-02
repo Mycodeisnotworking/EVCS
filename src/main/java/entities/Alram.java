@@ -15,17 +15,18 @@ import lombok.Getter;
 public class Alram {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	private Long alram_id;
+	@Column(name="alramId")
+	private Long id;
 
 	@Column(length=255)
-	private String user_id;
+	private String userId;
 	
 	@ManyToOne
 	@JoinColumn(name="charger_id")
 	private Charger charger;
 	
 	public Alram() {}
-	public Alram(String user_id) {
-		this.user_id=user_id;
+	public Alram(String userId) {
+		this.userId=userId;
 		}
 }

@@ -1,6 +1,6 @@
 package entities;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -14,10 +14,11 @@ import lombok.Getter;
 
 @Getter
 @Entity
-public class Review_Charger {
+public class ReviewCharger {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	private Long review_id;
+	@Column(name="reviewId")
+	private Long id;
 	@Column(length=255)
 	private String title;
 	@Column(columnDefinition="TEXT")
@@ -25,13 +26,13 @@ public class Review_Charger {
 	@Column(length=32)
 	private String writer;
 	@Column(nullable = false)
-	private Timestamp writedate;
+	private LocalDateTime writedate;
 	@ManyToOne
 	@JoinColumn(name="charger_id")
 	private Charger charger;
 	
-	public Review_Charger() {}
-	public Review_Charger(String title, String body, String writer, Timestamp writedate) {
+	public ReviewCharger() {}
+	public ReviewCharger(String title, String body, String writer, LocalDateTime writedate) {
 		this.title=title;
 		this.body=body;
 		this.writer=writer;
