@@ -15,7 +15,7 @@ import lombok.Getter;
 public class Alram {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="alramId")
+	@Column(name="alram_id")
 	private Long id;
 
 	@Column(length=255)

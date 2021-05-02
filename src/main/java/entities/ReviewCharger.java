@@ -17,7 +17,7 @@ import lombok.Getter;
 public class ReviewCharger {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="reviewId")
+	@Column(name="review_id")
 	private Long id;
 	@Column(length=255)
 	private String title;
@@ -26,16 +26,16 @@ public class ReviewCharger {
 	@Column(length=32)
 	private String writer;
 	@Column(nullable = false)
-	private LocalDateTime writedate;
+	private LocalDateTime writeDate;
 	@ManyToOne
 	@JoinColumn(name="charger_id")
 	private Charger charger;
 	
 	public ReviewCharger() {}
-	public ReviewCharger(String title, String body, String writer, LocalDateTime writedate) {
+	public ReviewCharger(String title, String body, String writer, LocalDateTime writeDate) {
 		this.title=title;
 		this.body=body;
 		this.writer=writer;
-		this.writedate=writedate;
+		this.writeDate=writeDate;
 		}
 }
