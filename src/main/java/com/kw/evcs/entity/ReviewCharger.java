@@ -27,7 +27,7 @@ public class ReviewCharger {
 	@Column(columnDefinition="TEXT")
 	private String body;
 	@Column(length=32)
-	private String writer;
+	private String userNickName;
 	@Column
 	private LocalDateTime createdAt;
 	@Column
@@ -41,11 +41,11 @@ public class ReviewCharger {
 	@JoinColumn(name="user_id")
 	private User user;
 	
-	public ReviewCharger(Long id, String title, String body, String writer, LocalDateTime createdAt, LocalDateTime modifiedAt, Charger charger, User user) {
+	public ReviewCharger(Long id, String title, String body, String userNickName, LocalDateTime createdAt, LocalDateTime modifiedAt, Charger charger, User user) {
 		this.id=id;
 		this.title=title;
 		this.body=body;
-		this.writer=writer;
+		this.userNickName=userNickName;
 		this.createdAt=createdAt;
 		this.modifiedAt=modifiedAt;
 		this.charger=charger;

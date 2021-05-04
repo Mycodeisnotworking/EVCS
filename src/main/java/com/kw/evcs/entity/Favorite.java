@@ -22,7 +22,7 @@ public class Favorite {
 	@Column(name="favorite_id")
 	private Long id;
 	@Column(length=255)
-	private String userId;
+	private String userNickName;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="charger_id")
@@ -33,9 +33,9 @@ public class Favorite {
 	private User user;
 	
 	@Builder
-	public Favorite(Long id, String userId, Charger charger, User user) {
+	public Favorite(Long id, String userNickName, Charger charger, User user) {
 		this.id=id;
-		this.userId=userId;
+		this.userNickName=userNickName;
 		this.charger=charger;
 		this.user=user;
 		}
