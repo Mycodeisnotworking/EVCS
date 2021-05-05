@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 public class ReviewCharger {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="review_id")
+	@Column(name="review_charger_id")
 	private Long id;
 	@Column(length=255)
 	private String title;
@@ -34,21 +34,21 @@ public class ReviewCharger {
 	private LocalDateTime modifiedAt;
 	
 	@ManyToOne
-	@JoinColumn(name="charger_id")
-	private Charger charger;
+	@JoinColumn(name="chargingStation_id")
+	private ChargingStation chargingStation;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="user_id")
 	private User user;
 	
-	public ReviewCharger(Long id, String title, String body, String userNickName, LocalDateTime createdAt, LocalDateTime modifiedAt, Charger charger, User user) {
+	public ReviewCharger(Long id, String title, String body, String userNickName, LocalDateTime createdAt, LocalDateTime modifiedAt, ChargingStation chargingStation, User user) {
 		this.id=id;
 		this.title=title;
 		this.body=body;
 		this.userNickName=userNickName;
 		this.createdAt=createdAt;
 		this.modifiedAt=modifiedAt;
-		this.charger=charger;
+		this.chargingStation=chargingStation;
 		this.user=user;
 		}
 }

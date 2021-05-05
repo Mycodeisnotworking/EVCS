@@ -21,9 +21,6 @@ public class Alram {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="alram_id")
 	private Long id;
-
-	@Column(length=255)
-	private String userNickName;
 	
 	//station은 charger 통해서 찾으세요. 자주 필요하게되면 추가함.
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -35,9 +32,8 @@ public class Alram {
 	private User user;
 	
 	@Builder
-	public Alram(Long id, String userNickName, Charger charger, User user) {
+	public Alram(Long id, Charger charger, User user) {
 		this.id=id;
-		this.userNickName=userNickName;
 		this.charger=charger;
 		this.user = user;
 		}
