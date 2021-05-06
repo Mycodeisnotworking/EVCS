@@ -21,22 +21,19 @@ public class Favorite {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="favorite_id")
 	private Long id;
-	@Column(length=255)
-	private String userNickName;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name="charger_id")
-	private Charger charger;
+	@JoinColumn(name="charging_station_id")
+	private ChargingStation chargingStation;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="user_id")
 	private User user;
 	
 	@Builder
-	public Favorite(Long id, String userNickName, Charger charger, User user) {
+	public Favorite(Long id, ChargingStation chargingStation, User user) {
 		this.id=id;
-		this.userNickName=userNickName;
-		this.charger=charger;
+		this.chargingStation=chargingStation;
 		this.user=user;
 		}
 }
