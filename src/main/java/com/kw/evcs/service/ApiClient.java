@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,67 +47,75 @@ public class ApiClient {
         this.chargingStationService = chargingStationService;
     }
 
-    // 1분마다 호출
-    @Scheduled(cron = "0 0/1 * * * *")
+    // 작업 완료 1분 후 재시작
+    @Scheduled(fixedDelay = 60000)
     public void updateData() {
         StopWatch stopWatch = new StopWatch();
         log.info("[ApiClient] API Call Scheduler start");
         stopWatch.start();
 
-        try {
-            String data = restTemplate.getForObject(getUri(1, 100), String.class);
+        // 조회 쿼리를 줄이기 위해 Map 형태로 미리 조회
+        Map<String, Charger> chargerCache = chargerService.findAllMap();
+        Map<String, Agency> agencyCache = agencyService.findAllMap();
+        Map<String, ChargingStation> chargingStationCache = chargingStationService.findAllMap();
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            ChargerInfo.Response response = objectMapper.readValue(data, ChargerInfo.Response.class);
+        for (int i = 1; ; i++) {
+            // saveAll로 한번에 업데이트하기 위해 List형태로 저장
+            List<Charger> chargerList = new ArrayList<>();
 
-            String resultCode = response.getResultCode();
-            if (Objects.isNull(resultCode) || !resultCode.equals("00")) {
-                log.info("[ApiClient] Fail to API Call : result code is fail");
+            try {
+                String data = restTemplate.getForObject(getUri(i, 9999), String.class);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                ChargerInfo.Response response = objectMapper.readValue(data, ChargerInfo.Response.class);
+
+                String resultCode = response.getResultCode();
+                if (Objects.isNull(resultCode) || !resultCode.equals("00")) {
+                    log.info("[ApiClient] Fail to API Call : result code is fail");
+                    return;
+                }
+
+                if (response.getNumOfRows() <= 0) {
+                    break;
+                }
+
+                List<ChargerInfo.Item> itemList = response.getItemList();
+                for (ChargerInfo.Item item : itemList) {
+                    Charger charger = Charger.parse(item);
+                    Agency agency = Agency.parse(item);
+                    ChargingStation chargingStation = ChargingStation.parse(item);
+
+                    if (!agencyCache.containsKey(item.getBusiId())) { // 나온적 없는 운영기관
+                        agencyCache.put(agency.getCode(), agency);
+                        charger.setAgency(agency);
+                    } else {
+                        charger.setAgency(agencyCache.get(agency.getCode()));
+                    }
+
+                    if (!chargingStationCache.containsKey(item.getStatId())) { //나온적 없는 충전소
+                        chargingStationCache.put(chargingStation.getCode(), chargingStation);
+                        charger.setChargingStation(chargingStation);
+                    } else {
+                        charger.setChargingStation(chargingStationCache.get(chargingStation.getCode()));
+                    }
+
+                    if (chargerCache.containsKey(charger.getCode())) {
+                        charger.setId(chargerCache.get(charger.getCode()).getId());
+                    }
+                    chargerList.add(charger);
+                }
+
+                agencyService.saveAll(agencyCache.values());
+                chargingStationService.saveAll(chargingStationCache.values());
+                chargerService.saveAll(chargerList);
+
+            } catch (URISyntaxException e) {
+                log.info("[ApiClient] Fail to API Call : URI is not valid");
+                return;
+            } catch (JsonProcessingException e) {
+                log.info("[ApiClient] Fail to API Call : Object mapping fail");
                 return;
             }
-
-            Map<String, Charger> chargerCache = chargerService.findAllMap();
-            Map<String, Agency> agencyCache = agencyService.findAllMap();
-            Map<String, ChargingStation> chargingStationCache = chargingStationService.findAllMap();
-
-            List<ChargerInfo.Item> itemList = response.getItemList();
-            for (ChargerInfo.Item item : itemList) {
-                Charger charger = Charger.parse(item);
-                Agency agency = Agency.parse(item);
-                ChargingStation chargingStation = ChargingStation.parse(item);
-
-                if (!agencyCache.containsKey(item.getBusiId())) { // 나온적 없는 운영기관
-                    agencyService.save(agency);
-                    agencyCache.put(agency.getCode(), agency);
-                    charger.setAgency(agency);
-                } else {
-                    agency.setId(agencyCache.get(item.getBusiId()).getId());
-                    agencyService.save(agency); // 새로운 값으로 업데이트
-                    charger.setAgency(agency);
-                }
-
-                if (!chargingStationCache.containsKey(item.getStatId())) { //나온적 없는 충전소
-                    chargingStationService.save(chargingStation);
-                    chargingStationCache.put(chargingStation.getCode(), chargingStation);
-                    charger.setChargingStation(chargingStation);
-                } else {
-                    chargingStation.setId(chargingStationCache.get(item.getStatId()).getId());
-                    chargingStationService.save(chargingStation);
-                    charger.setChargingStation(chargingStation);
-                }
-
-                if (chargerCache.containsKey(charger.getCode())) {
-                    charger.setId(chargerCache.get(charger.getCode()).getId());
-                }
-                chargerService.save(charger);
-            }
-
-        } catch (URISyntaxException e) {
-            log.info("[ApiClient] Fail to API Call : URI is not valid");
-            return;
-        } catch (JsonProcessingException e) {
-            log.info("[ApiClient] Fail to API Call : Object mapping fail");
-            return;
         }
 
         stopWatch.stop();
