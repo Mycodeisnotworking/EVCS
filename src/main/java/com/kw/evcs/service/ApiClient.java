@@ -54,6 +54,7 @@ public class ApiClient {
         log.info("[ApiClient] API Call Scheduler start");
         stopWatch.start();
 
+        boolean stationChanged, agencyChanged;
         // 조회 쿼리를 줄이기 위해 Map 형태로 미리 조회
         Map<String, Charger> chargerCache = chargerService.findAllMap();
         Map<String, Agency> agencyCache = agencyService.findAllMap();
@@ -62,7 +63,8 @@ public class ApiClient {
         for (int i = 1; ; i++) {
             // saveAll로 한번에 업데이트하기 위해 List형태로 저장
             List<Charger> chargerList = new ArrayList<>();
-
+            stationChanged=false;
+            agencyChanged=false;
             try {
                 String data = restTemplate.getForObject(getUri(i, 9999), String.class);
 
@@ -86,6 +88,7 @@ public class ApiClient {
                     ChargingStation chargingStation = ChargingStation.parse(item);
 
                     if (!agencyCache.containsKey(item.getBusiId())) { // 나온적 없는 운영기관
+                    	agencyChanged=true;
                         agencyCache.put(agency.getCode(), agency);
                         charger.setAgency(agency);
                     } else {
@@ -93,6 +96,7 @@ public class ApiClient {
                     }
 
                     if (!chargingStationCache.containsKey(item.getStatId())) { //나온적 없는 충전소
+                    	stationChanged=true;
                         chargingStationCache.put(chargingStation.getCode(), chargingStation);
                         charger.setChargingStation(chargingStation);
                     } else {
@@ -104,9 +108,10 @@ public class ApiClient {
                     }
                     chargerList.add(charger);
                 }
-
-                agencyService.saveAll(agencyCache.values());
-                chargingStationService.saveAll(chargingStationCache.values());
+                if(agencyChanged)
+                	agencyService.saveAll(agencyCache.values());
+                if(stationChanged)
+                	chargingStationService.saveAll(chargingStationCache.values());
                 chargerService.saveAll(chargerList);
 
             } catch (URISyntaxException e) {
