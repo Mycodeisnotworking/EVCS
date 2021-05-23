@@ -32,4 +32,4 @@ build/
 ### VS Code ###
 .vscode/
 
-src/main/resources/api-info.properties`netst
+src/main/resources/api-info.properties
