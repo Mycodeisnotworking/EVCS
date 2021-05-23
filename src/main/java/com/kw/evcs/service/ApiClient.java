@@ -4,17 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kw.evcs.domain.entity.Agency;
 import com.kw.evcs.domain.entity.Charger;
-import com.kw.evcs.domain.entity.ChargerInfo;
+import com.kw.evcs.web.dto.ChargerInfo;
 import com.kw.evcs.domain.entity.ChargingStation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -47,14 +47,19 @@ public class ApiClient {
         this.chargingStationService = chargingStationService;
     }
 
-    // 작업 완료 1분 후 재시작
-    @Scheduled(fixedDelay = 60000)
-    public void updateData() {
+    @PostConstruct
+    public void init() {
+        getInitialData();
+    }
+
+    /**
+     * 서버 시작시 데이터 초기 세팅
+     */
+    public void getInitialData() {
         StopWatch stopWatch = new StopWatch();
-        log.info("[ApiClient] API Call Scheduler start");
+        log.info("[ApiClient] Initial Data Process start");
         stopWatch.start();
 
-        boolean stationChanged, agencyChanged;
         // 조회 쿼리를 줄이기 위해 Map 형태로 미리 조회
         Map<String, Charger> chargerCache = chargerService.findAllMap();
         Map<String, Agency> agencyCache = agencyService.findAllMap();
@@ -63,8 +68,6 @@ public class ApiClient {
         for (int i = 1; ; i++) {
             // saveAll로 한번에 업데이트하기 위해 List형태로 저장
             List<Charger> chargerList = new ArrayList<>();
-            stationChanged=false;
-            agencyChanged=false;
             try {
                 String data = restTemplate.getForObject(getUri(i, 9999), String.class);
 
@@ -73,7 +76,7 @@ public class ApiClient {
 
                 String resultCode = response.getResultCode();
                 if (Objects.isNull(resultCode) || !resultCode.equals("00")) {
-                    log.info("[ApiClient] Fail to API Call : result code is fail");
+                    log.error("[ApiClient] API Result Code is not Success : result code is {}", resultCode);
                     return;
                 }
 
@@ -88,7 +91,6 @@ public class ApiClient {
                     ChargingStation chargingStation = ChargingStation.parse(item);
 
                     if (!agencyCache.containsKey(item.getBusiId())) { // 나온적 없는 운영기관
-                    	agencyChanged=true;
                         agencyCache.put(agency.getCode(), agency);
                         charger.setAgency(agency);
                     } else {
@@ -96,7 +98,6 @@ public class ApiClient {
                     }
 
                     if (!chargingStationCache.containsKey(item.getStatId())) { //나온적 없는 충전소
-                    	stationChanged=true;
                         chargingStationCache.put(chargingStation.getCode(), chargingStation);
                         charger.setChargingStation(chargingStation);
                     } else {
@@ -108,23 +109,21 @@ public class ApiClient {
                     }
                     chargerList.add(charger);
                 }
-                if(agencyChanged)
-                	agencyService.saveAll(agencyCache.values());
-                if(stationChanged)
-                	chargingStationService.saveAll(chargingStationCache.values());
+                agencyService.saveAll(agencyCache.values());
+                chargingStationService.saveAll(chargingStationCache.values());
                 chargerService.saveAll(chargerList);
 
             } catch (URISyntaxException e) {
-                log.info("[ApiClient] Fail to API Call : URI is not valid");
+                log.info("[ApiClient] Fail to Initial Data Process : URI is not valid");
                 return;
             } catch (JsonProcessingException e) {
-                log.info("[ApiClient] Fail to API Call : Object mapping fail");
+                log.info("[ApiClient] Fail to Initial Data Process : Object mapping fail");
                 return;
             }
         }
 
         stopWatch.stop();
-        log.info("[ApiClient] API Call Scheduler complete | Total elapsed time:{}s", stopWatch.getTotalTimeSeconds());
+        log.info("[ApiClient] Initial Data Process complete | Total elapsed time:{}s", stopWatch.getTotalTimeSeconds());
     }
 
     private URI getUri(int pageNo, int numOfRows) throws URISyntaxException {

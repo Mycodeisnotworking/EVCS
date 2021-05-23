@@ -1,4 +1,4 @@
-package com.kw.evcs.domain.entity;
+package com.kw.evcs.web.dto;
 
 import lombok.Data;
 

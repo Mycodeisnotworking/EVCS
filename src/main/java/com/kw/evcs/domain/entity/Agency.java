@@ -1,13 +1,12 @@
 package com.kw.evcs.domain.entity;
 
+import com.kw.evcs.web.dto.ChargerInfo;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 
-@DynamicUpdate
 @Getter
 @NoArgsConstructor
 @Entity
