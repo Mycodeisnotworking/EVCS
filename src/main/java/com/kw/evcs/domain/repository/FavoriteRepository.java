@@ -1,7 +1,8 @@
-package com.kw.evcs.repository;
+package com.kw.evcs.domain.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.kw.evcs.entity.Favorite;
+
+import com.kw.evcs.domain.entity.Favorite;
 
 public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 

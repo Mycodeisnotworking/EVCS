@@ -1,4 +1,4 @@
-package com.kw.evcs.entity;
+package com.kw.evcs.domain.entity;
 
 import java.time.LocalDateTime;
 
