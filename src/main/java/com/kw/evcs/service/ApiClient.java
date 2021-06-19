@@ -114,10 +114,10 @@ public class ApiClient {
                 chargerService.saveAll(chargerList);
 
             } catch (URISyntaxException e) {
-                log.info("[ApiClient] Fail to Initial Data Process : URI is not valid");
+                log.error("[ApiClient] Fail to Initial Data Process : URI is not valid");
                 return;
             } catch (JsonProcessingException e) {
-                log.info("[ApiClient] Fail to Initial Data Process : Object mapping fail");
+                log.error("[ApiClient] Fail to Initial Data Process : Object mapping fail");
                 return;
             }
         }
