@@ -2,6 +2,7 @@ package com.kw.evcs.domain.entity;
 
 import com.kw.evcs.common.util.DateUtil;
 import com.kw.evcs.web.dto.ChargerInfo;
+import com.kw.evcs.web.dto.ChargerStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -73,6 +74,11 @@ public class Charger {
                 .isRemove(item.getDelYn())
                 .removeDetail(item.getDelDetail())
                 .build();
+    }
+
+    public void updateStatus(ChargerStatus.Item item) {
+        this.chargerCondition = ChargerCondition.getCondition(item.getStat());
+        this.updatedDate = DateUtil.parseDate(item.getStatUpdDt());
     }
 
     public void setId(Long id) {

@@ -10,11 +10,16 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class ChargerService {
 
     private final ChargerRepository chargerRepository;
+
+    public Charger findByCode(String code) {
+        return chargerRepository.findByCode(code);
+    }
 
     public Map<String, Charger> findAllMap() {
         return chargerRepository.findAll().stream()

@@ -6,15 +6,16 @@ import com.kw.evcs.domain.entity.Agency;
 import com.kw.evcs.domain.entity.Charger;
 import com.kw.evcs.domain.entity.ChargingStation;
 import com.kw.evcs.web.dto.ChargerInfo;
+import com.kw.evcs.web.dto.ChargerStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -47,7 +48,7 @@ public class ApiClient {
         this.chargingStationService = chargingStationService;
     }
 
-    @PostConstruct
+    //    @PostConstruct
     public void init() {
         getInitialData();
     }
@@ -69,7 +70,7 @@ public class ApiClient {
         List<Charger> chargerList = new ArrayList<>();
         for (int i = 1; ; i++) {
             try {
-                String data = restTemplate.getForObject(getInfoUri(i, 9999), String.class);
+                String data = restTemplate.getForObject(getUri("/getChargerInfo", i, 9999), String.class);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 ChargerInfo.Response response = objectMapper.readValue(data, ChargerInfo.Response.class);
@@ -77,7 +78,7 @@ public class ApiClient {
                 String resultCode = response.getResultCode();
                 if (Objects.isNull(resultCode) || !resultCode.equals("00")) {
                     log.error("[ApiClient] API Result Code is not Success : result code is {}", resultCode);
-                    return;
+                    continue;
                 }
 
                 if (response.getNumOfRows() <= 0) {
@@ -112,10 +113,10 @@ public class ApiClient {
 
             } catch (URISyntaxException e) {
                 log.error("[ApiClient] Fail to Initial Data Process : URI is not valid");
-                return;
+                continue;
             } catch (JsonProcessingException e) {
                 log.error("[ApiClient] Fail to Initial Data Process : Object mapping fail");
-                return;
+                continue;
             }
         }
 
@@ -126,8 +127,55 @@ public class ApiClient {
         log.info("[ApiClient] Initial Data Process complete | Total elapsed time:{}s", stopWatch.getTotalTimeSeconds());
     }
 
-    private URI getInfoUri(int pageNo, int numOfRows) throws URISyntaxException {
-        String accessUrl = String.format("%s%s?ServiceKey=%s&pageNo=%d&numOfRows=%d", apiPath, "/getChargerInfo", apiKey, pageNo, numOfRows);
+    /**
+     * 충전기 상태를 1분마다 업데이트하는 스케줄러
+     */
+    @Scheduled(cron = "0 * * * * *")
+    public void updateStatus() {
+        StopWatch stopWatch = new StopWatch();
+        log.info("[ApiClient] Charger Status Update start");
+        stopWatch.start();
+        List<Charger> chargerList = new ArrayList<>(); // 업데이트할 충전기 리스트
+
+        for (int i = 1; ; i++) {
+            try {
+                String data = restTemplate.getForObject(getUri("/getChargerStatus", i, 9999), String.class);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                ChargerStatus.Response response = objectMapper.readValue(data, ChargerStatus.Response.class);
+
+                String resultCode = response.getResultCode();
+                if (Objects.isNull(resultCode) || !resultCode.equals("00")) {
+                    log.error("[ApiClient] API Result Code is not Success : result code is {}", resultCode);
+                    continue;
+                }
+
+                if (response.getNumOfRows() <= 0) {
+                    break;
+                }
+
+                List<ChargerStatus.Item> itemList = response.getItemList();
+                for (ChargerStatus.Item item : itemList) {
+                    Charger charger = chargerService.findByCode(item.getStatId() + item.getChgerId());
+                    charger.updateStatus(item);
+                    chargerList.add(charger);
+                }
+            } catch (URISyntaxException e) {
+                log.error("[ApiClient] Fail to Initial Data Process : URI is not valid");
+                continue;
+            } catch (JsonProcessingException e) {
+                log.error("[ApiClient] Fail to Initial Data Process : Object mapping fail");
+                continue;
+            }
+        }
+
+        chargerService.saveAll(chargerList);
+        stopWatch.stop();
+        log.info("[ApiClient] Charger Status Update complete | Total elapsed time:{}s", stopWatch.getTotalTimeSeconds());
+    }
+
+    private URI getUri(String subPath, int pageNo, int numOfRows) throws URISyntaxException {
+        String accessUrl = String.format("%s%s?ServiceKey=%s&pageNo=%d&numOfRows=%d", apiPath, subPath, apiKey, pageNo, numOfRows);
         return new URI(accessUrl);
     }
 }
