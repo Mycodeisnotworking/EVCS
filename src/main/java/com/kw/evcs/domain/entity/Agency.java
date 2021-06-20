@@ -1,5 +1,6 @@
 package com.kw.evcs.domain.entity;
 
+import com.kw.evcs.web.dto.ChargerInfo;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,14 +12,18 @@ import javax.persistence.*;
 @Entity
 public class Agency {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "agency_id")
     private Long id;
 
+    @Column(length = 2, unique = true, nullable = false)
     private String code;
 
+    @Column(length = 50, nullable = false)
     private String name;
 
+    @Column(length = 20, nullable = false)
     private String phone;
 
     @Builder
@@ -27,5 +32,17 @@ public class Agency {
         this.code = code;
         this.name = name;
         this.phone = phone;
+    }
+
+    public static Agency parse(ChargerInfo.Item item) {
+        return Agency.builder()
+                .code(item.getBusiId())
+                .name(item.getBusiNm())
+                .phone(item.getBusiCall())
+                .build();
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }
