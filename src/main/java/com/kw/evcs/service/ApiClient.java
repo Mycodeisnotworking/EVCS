@@ -65,11 +65,11 @@ public class ApiClient {
         Map<String, Agency> agencyCache = agencyService.findAllMap();
         Map<String, ChargingStation> chargingStationCache = chargingStationService.findAllMap();
 
+        // saveAll로 한번에 업데이트하기 위해 List형태로 저장
+        List<Charger> chargerList = new ArrayList<>();
         for (int i = 1; ; i++) {
-            // saveAll로 한번에 업데이트하기 위해 List형태로 저장
-            List<Charger> chargerList = new ArrayList<>();
             try {
-                String data = restTemplate.getForObject(getUri(i, 9999), String.class);
+                String data = restTemplate.getForObject(getInfoUri(i, 9999), String.class);
 
                 ObjectMapper objectMapper = new ObjectMapper();
                 ChargerInfo.Response response = objectMapper.readValue(data, ChargerInfo.Response.class);
@@ -109,9 +109,6 @@ public class ApiClient {
                     }
                     chargerList.add(charger);
                 }
-                agencyService.saveAll(agencyCache.values());
-                chargingStationService.saveAll(chargingStationCache.values());
-                chargerService.saveAll(chargerList);
 
             } catch (URISyntaxException e) {
                 log.error("[ApiClient] Fail to Initial Data Process : URI is not valid");
@@ -122,12 +119,15 @@ public class ApiClient {
             }
         }
 
+        agencyService.saveAll(agencyCache.values());
+        chargingStationService.saveAll(chargingStationCache.values());
+        chargerService.saveAll(chargerList);
         stopWatch.stop();
         log.info("[ApiClient] Initial Data Process complete | Total elapsed time:{}s", stopWatch.getTotalTimeSeconds());
     }
 
-    private URI getUri(int pageNo, int numOfRows) throws URISyntaxException {
-        String accessUrl = String.format("%s?ServiceKey=%s&pageNo=%d&numOfRows=%d", apiPath, apiKey, pageNo, numOfRows);
+    private URI getInfoUri(int pageNo, int numOfRows) throws URISyntaxException {
+        String accessUrl = String.format("%s%s?ServiceKey=%s&pageNo=%d&numOfRows=%d", apiPath, "/getChargerInfo", apiKey, pageNo, numOfRows);
         return new URI(accessUrl);
     }
 }
