@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -48,7 +49,7 @@ public class ApiClient {
         this.chargingStationService = chargingStationService;
     }
 
-    //    @PostConstruct
+    @PostConstruct
     public void init() {
         getInitialData();
     }
